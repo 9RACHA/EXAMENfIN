@@ -43,21 +43,21 @@ public class GameManager : NetworkBehaviour
     }    
 
     static void SubmitNewPosition(){
-        if (GUILayout.Button(NetworkManager.Singleton.IsServer ? "Mover a Inicio" : "Request Position Change"))
+        if (GUILayout.Button(NetworkManager.Singleton.IsServer ? "Cor de Inicio" : "Request Cor de Inicio"))
         {
             if (NetworkManager.Singleton.IsServer && !NetworkManager.Singleton.IsClient)
             {
                 var players = NetworkManager.Singleton.ConnectedClientsList;
                 foreach (var player in players)
                 {
-                   // player.PlayerObject.GetComponent<Player>().Mover();
+                    player.PlayerObject.GetComponent<Player>().Colorear();
                 }
             }
             else
             {
                 var playerObject = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
                 var player = playerObject.GetComponent<Player>();
-               // player.Mover();
+                player.Colorear();
             }
         }
     }

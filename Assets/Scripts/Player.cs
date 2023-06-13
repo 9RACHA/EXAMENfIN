@@ -2,56 +2,101 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Unity.Netcode;
 using Unity.Netcode.Components;
+using System.Collections;
+using System.Collections.Generic;
+
+//EXAMEN
 
 public class Player : NetworkBehaviour {
     
+    public NetworkVariable<Color> ColorPlayer = new NetworkVariable<Color>();
+    public NetworkVariable<Vector3> Position = new NetworkVariable<Vector3>();
+
     public float velocidadMovimiento = 4f;
     public float fuerzaSalto = 10f;
+
     private Rigidbody rb;
-    private bool isGrounded = true;
+    private Renderer r;
+
+
+   /* public Color Blanco;
+    public Color Rojo;
+    public Color Verde;
+    public Color Azul;
+    public Color Amarillo; */
+
+    public List<Color> coloresDisponibles = new List<Color>();
 
     private void Start() {
         // Obtiene el componente Rigidbody adjunto al objeto
         rb = GetComponent<Rigidbody>();
+        r = GetComponent<Renderer>();
+
+        coloresDisponibles.Add(Color.white);
+        coloresDisponibles.Add(Color.red);
+        coloresDisponibles.Add(Color.green);
+        coloresDisponibles.Add(Color.blue);
+        coloresDisponibles.Add(Color.yellow);
     }
 
-   /* public void Mover(){
-        if (IsOwner)
+    public void Colorear(){
+        if (IsServer)
         {
-            EnviarPosicionServerRpc();
+            EnviarColorServerRpc();
         }
-    } */
+    } 
+
+   [ServerRpc]
+    void EnviarColorServerRpc(ServerRpcParams rpcParams = default){
+        ColorPlayer.Value = ObtenerColorBlanco();
+        ActualizarColorJugadorServerRpc();
+    } 
+
+    
+     Color ObtenerColorBlanco(List<Color> coloresEquipo){
+        Debug.Log("Me Cambio de Color a Blanco");
+       return Color.white;
+    } 
+
+    [ServerRpc]
+    void SolicitarCambioPosicionServerRpc(Vector3 direccion){
+        Position.Value += direccion;
+        ActualizarPosicionClientRpc(Position.Value);
+    }
     
 
     private void Update() {
+        
+       if (IsOwner)
+        {
+            Vector3 direccion = Vector3.zero;
 
-        // Si el jugador no está en el suelo, no realiza ninguna acción
-        if (!isGrounded)
-            return;
-        // Si el jugador no es el propietario del objeto de red, no realiza ninguna acción
-        if (!IsOwner)
-            return;
-        // Obtener la entrada del teclado para el movimiento horizontal y vertical
-        float movimientoHori = Input.GetAxis("Horizontal"); // || Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D) // Or | añadir A y D
-        float movimientoVerti = Input.GetAxis("Vertical"); // OR | añadir W y S
-        // Calcula el vector de movimiento en función de la entrada del teclado y la velocidad de movimiento
-        Vector3 movimiento = new Vector3(movimientoHori, 0f, movimientoVerti) * velocidadMovimiento;
-        // Aplica el movimiento al Rigidbody del jugador
-        rb.velocity = movimiento;
-        // Si se presiona la tecla de espacio y el jugador está en el suelo, aplica una fuerza hacia arriba para simular un salto
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded) {
-            rb.AddForce(Vector3.up * fuerzaSalto, ForceMode.Impulse);
-            isGrounded = false;
-            Debug.Log("Salto");
+            if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
+            {
+                direccion = Vector3.left;
+                return Color.red;
+            }
+            else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
+            {
+                direccion = Vector3.right;
+            }
+            else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S))
+            {
+                direccion = Vector3.back;
+            }
+            else if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
+            {
+                direccion = Vector3.forward;
+            }
+
+            if (direccion != Vector3.zero)
+            {
+                SolicitarCambioPosicionServerRpc(direccion);
+            }
         }
     }
 
-    private void OnCollisionEnter(Collision collision) {
-        // Si el jugador colisiona con un objeto etiquetado como "Suelo", se considera que está en el suelo
-        if (collision.gameObject.CompareTag("Suelo")) {
-            isGrounded = true;
-            Debug.Log("Toco suelo");
-        }
-    }
-}
+
+ }
+
 
